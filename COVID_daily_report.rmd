@@ -1,0 +1,380 @@
+---
+title: <center>COVID-19 Report</center>
+author: <center>Alejandro Álvarez</center>
+date: <center>`r Sys.setlocale('LC_TIME','English'); format(Sys.time(), '%d %B, %Y')`</center>
+output:
+   html_document:
+      toc: true
+      toc_depth: 3
+      toc_float:
+         collapse: false
+         smooth_scroll: true
+      includes:
+         after_body: footer.html
+      css: style.css
+---
+
+```{r setup, include=FALSE}
+
+##### R Markdown global options #####
+
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, include = TRUE)
+
+##### libraries #####
+
+library(tidyverse)
+library(plotly)
+library(extrafont)
+library(mgcv)
+loadfonts(device = "win") # The first time you install this package, you have to execute font_import()
+
+##### data import #####
+
+mobility_raw_data <- read_csv('inputs/global_mobility_report.csv')
+
+covid_data <- read_csv('inputs/owid-covid-data.csv')
+
+##### Colors #####
+
+colors_pal <- c('#004170','#098d9c','#cc003a','#b2d600','#ffcc00','#00c954','#00bf9f','#00a9bf','#6f00bf','#b02c88')
+
+colors_continent <- sample(colors_pal,6,replace = FALSE)
+
+##### Dummy function #####
+
+do_nothing <- function(df) { return(df) }
+
+```
+
+<br>
+
+Sources:
+
+* Our World in Data. Data collected, aggregated, and documented by Diana Beltekian, Daniel Gavrilov, Charlie Giattino, Joe Hasell, Bobbie Macdonald, Edouard Mathieu, Esteban Ortiz-Ospina, Hannah Ritchie, Max Roser. https://github.com/owid/covid-19-data/tree/master/public/data. Accessed: `r Sys.setlocale('LC_TIME','English'); format(Sys.time(), '%d %B, %Y')`.
+
+* Google LLC "Google COVID-19 Community Mobility Reports". https://www.google.com/covid19/mobility/ Accessed: `r Sys.setlocale('LC_TIME','English'); format(Sys.time(), '%d %B, %Y')`.
+
+<br>
+
+# COVID-19 Cases
+
+<br>
+
+[Text]
+
+<br>
+
+```{r data_frames}
+
+covid1 <- covid_data %>%
+   arrange(location,date) %>% 
+   group_by(location) %>%
+   mutate(max_cases = max(total_cases,na.rm = TRUE),
+          max_deaths = max(total_deaths,na.rm = TRUE),
+          max_cases_per_million = max(total_cases_per_million,na.rm = TRUE),
+          max_deaths_per_million = max(total_deaths_per_million,na.rm = TRUE)) %>%
+   filter(location != 'World') %>% 
+   do_nothing()
+
+```
+
+## Total Accumulated Cases by Country
+
+<br>
+
+[Text]
+
+<br>
+
+```{r total_cases_by_country_plot, fig.height=10, fig.width=10, fig.align='center'}
+
+covid1 %>% 
+   filter( (max(total_cases_per_million,na.rm = TRUE) > 1000 &
+               max_cases > 40000 &
+               population > 5000000 &
+               total_cases >= 100) |
+              location == 'China' ) %>%
+   ggplot(aes(x = date, y = total_cases/1000, color = continent)) +
+   geom_line(size = 2) +
+   facet_wrap(~fct_reorder(location,max_cases, .desc = TRUE), scales = 'free_y', nrow = 7, ncol = 4) +
+   scale_y_continuous(labels = scales::comma_format(accuracy = 1)) +
+   scale_color_manual(values = colors_continent) +
+   theme_minimal() +
+   theme(panel.grid = element_blank(),
+         panel.background = element_rect(fill = '#fafafa', color = 'white'),
+         strip.background = element_rect(fill = '#fafafa', color = 'white'),
+         legend.position = 'bottom',
+         legend.title = element_blank(),
+         axis.title.x = element_blank(),
+         text = element_text(family = 'Arial', color = '#000f1c'),
+         plot.title = element_text(hjust = 0.5, face = 'bold'),
+         plot.caption = element_text(hjust = 0),
+         NULL) +
+   ylab('Total cases (\'000)\n') +
+   labs(title = 'Total cases\' evolution since the 100th case, by country\n',
+        caption = '* Only countries with more than 40,000 cases, more than 1,000 cases per million habitants, and with a total population higher than 5 million people\nare shown (except for China).\n\nData source: Our World in Data.')
+
+```
+
+<br>
+
+```{r total_cases_by_country_table, fig.align='center'}
+
+covid1 %>% 
+   filter(date == last(date)) %>% 
+   select(date, location, total_cases, total_cases_per_million, total_deaths, total_deaths_per_million) %>% 
+   arrange(-total_cases) %>% 
+   rename_all(funs(c('Date', 'Country', 'Total Cases', 'Total Cases per Million', 'Total Deaths', 'Total Deaths per Million'))) %>% 
+   DT::datatable(., rownames = FALSE,
+                 filter = 'top',
+                 width = 825,
+                 options = list(pageLength = 20,
+                                scrollX = TRUE,
+                                searching = TRUE,
+                                lengthMenu = c(10,20,30,40,50),
+                                columnDefs = list(list(className = 'dt-center', targets = 0:5)))) %>% 
+   DT::formatRound(table = ., columns = c('Total Deaths per Million'),digits = 2) %>% 
+   DT::formatCurrency(table = ., columns = c('Total Cases', 'Total Cases per Million', 'Total Deaths'),currency = '', digits = 0)
+
+```
+
+<br>
+
+## New Cases by Country
+
+<br>
+
+[Text]
+
+<br>
+
+```{r new_cases_by_country_p, fig.height=9, fig.width=10, fig.align='center'}
+
+p <- covid1 %>% 
+   filter( (max(total_cases_per_million,na.rm = TRUE) > 1000 &
+               max_cases > 40000 &
+               population > 5000000 &
+               total_cases >= 100) |
+              location == 'China' ) %>%
+   mutate('New cases (mov. av.)' = round(zoo::rollmean(x = new_cases,k = 7, fill = NA, align = 'left'),digits = 0)) %>%
+   rename('Date' = date) %>% 
+   ggplot(aes(x = Date, y = `New cases (mov. av.)`, color = continent)) +
+   geom_line(size = 0.5) +
+   facet_wrap(~fct_reorder(location,max_cases, .desc = TRUE), scales = 'free_y', nrow = 7, ncol = 4) +
+   scale_y_continuous(labels = scales::comma_format(accuracy = 1)) +
+   scale_color_manual(values = colors_continent) +
+   theme_minimal() +
+   theme(panel.grid = element_blank(),
+         panel.background = element_rect(fill = '#fafafa', color = 'white'),
+         strip.background = element_rect(fill = '#fafafa', color = 'white'),
+         legend.position = 'bottom',
+         legend.title = element_blank(),
+         axis.title.x = element_blank(),
+         text = element_text(family = 'Arial', color = '#000f1c'),
+         plot.title = element_text(hjust = 0.5, face = 'bold'),
+         plot.subtitle = element_text(hjust = 0.5, face = 'bold'),
+         plot.caption = element_text(hjust = 0),
+         NULL) +
+   ylab('') +
+   labs(title = 'Daily new cases\' since the 100th case, by country\n',
+        subtitle = '7-day moving average',
+        caption = '* Only countries with more than 40,000 cases, more than 1,000 cases per million habitants, and with a total population higher than 5 million people\nare shown (except for China).\n\nData source: Our World in Data.')
+
+# ggplotly(p,tooltip = c('text','x','text','y')) %>% 
+#    layout(legend = list(orientation = 'h', x = 0.1, y = -0.05))
+p
+
+
+```
+
+<br>
+
+## Total Deaths by Country
+
+<br>
+
+[Text]
+
+<br>
+
+```{r total_deaths_by_country_p, fig.height=6, fig.width=8, fig.align='center'}
+
+p <- covid1 %>% 
+   group_by(continent,.add = TRUE) %>% 
+   summarise(total_deaths = max(total_deaths,na.rm = TRUE), .groups = 'keep') %>% 
+   mutate('Total deaths' = round(total_deaths/1000,digits = 1)) %>% 
+   filter(total_deaths > 1000 & !is.na(continent)) %>% 
+   ggplot(aes(x = fct_reorder(location,total_deaths,.desc = TRUE), y = `Total deaths`, fill = continent)) +
+   geom_col() +
+   scale_y_continuous(labels = scales::comma_format(accuracy = 1)) +
+   scale_fill_manual(values = colors_continent) +
+   theme_minimal() +
+   theme(panel.grid = element_blank(),
+         legend.title = element_blank(),
+         axis.title.x = element_blank(),
+         axis.text.x = element_text(angle = 90,vjust = 0),
+         text = element_text(family = 'Arial', color = '#000f1c'),
+         plot.title = element_text(hjust = 0.5, face = 'bold'),
+         plot.subtitle = element_text(hjust = 0.5, face = 'bold'),
+         plot.caption = element_text(hjust = 0),
+         NULL) +
+   ylab('Total deaths (\'000)\n') +
+   labs(title = 'Total deaths by country\n',
+        caption = '* Only countries with more than 1,000 deaths are shown.\n\nData source: Our World in Data.')
+
+ggplotly(p,tooltip = c('text','y'))
+
+
+```
+
+<br>
+
+# Global Mobility
+
+<br>
+
+[Text]
+
+<br>
+
+## Mobility vs. Virus' Spread
+
+<br>
+
+[Text]
+
+<br>
+
+```{r mob_v_covid1, fig.height=8, fig.width=10, fig.align='center'}
+
+covid1 %>% 
+   group_by(continent,.add = TRUE) %>% 
+   select(continent:new_deaths_per_million, max_cases:max_cases_per_million, population) %>% 
+   filter(total_cases >= 100 & population > 1000000) %>% 
+   filter(date == min(date) & max_cases_per_million < 10000 & max_cases_per_million > 1000) %>% 
+   left_join(select(filter(mobility_raw_data,is.na(sub_region_1)),
+                    country_region,date,8:13), 
+             by = c('location' = 'country_region', 'date' = 'date')) %>% 
+   filter(across(ends_with('baseline'),~!is.na(.))) %>%
+   rowwise() %>% mutate(mob_idx = sum(retail_and_recreation_percent_change_from_baseline,
+                                      grocery_and_pharmacy_percent_change_from_baseline,
+                                      parks_percent_change_from_baseline,
+                                      transit_stations_percent_change_from_baseline,
+                                      workplaces_percent_change_from_baseline,
+                                      na.rm = TRUE)/5) %>% 
+   ggplot(aes(x = mob_idx, y = max_cases_per_million, color = continent)) +
+   geom_point(aes(size = max_deaths),alpha = 0.25) +
+   geom_text(aes(label = location, color = continent)) +
+   scale_size(range = c(.1,20), name = 'Current total deaths', labels = scales::comma) +
+   scale_color_manual(values = colors_continent, name = '') +
+   scale_y_continuous(labels = scales::comma) +
+   theme_minimal() +
+   theme() +
+   theme(panel.grid = element_blank(),
+         text = element_text(family = 'Arial', color = '#000f1c'),
+         plot.title = element_text(hjust = 0.5, face = 'bold'),
+         plot.subtitle = element_text(hjust = 0.5, face = 'bold'),
+         plot.caption = element_text(hjust = 0),
+         NULL) +
+   ylab('Current total cases per million habitants\n') + xlab('\n Average decrease in mobility') +
+   labs(title = 'Relation between mobility reduction after the 100th detected case,\nand total cases per million habitants and total deaths.\n',
+        caption = '*Only countries with total cases per million habitants between 1000 and 10,000, and wit a population higher than 1 million people are shown.\n\nData source: Our World in Data & Google Mobility Reports.')
+
+```
+
+<br>
+
+## In-house Activities vs. Virus' Spread
+
+[Text]
+
+<br>
+
+```{r mob_v_covid2, fig.height=8, fig.width=10, fig.align='center'}
+
+covid1 %>% 
+   group_by(continent,.add = TRUE) %>% 
+   select(continent:new_deaths_per_million, max_cases:max_cases_per_million, population) %>% 
+   filter(total_cases >= 100 & population > 1000000) %>% 
+   filter(date == min(date) & max_cases_per_million < 10000 & max_cases_per_million > 1000) %>% 
+   left_join(select(filter(mobility_raw_data,is.na(sub_region_1)),
+                    country_region,date,8:13), 
+             by = c('location' = 'country_region', 'date' = 'date')) %>% 
+   filter(across(ends_with('baseline'),~!is.na(.))) %>%
+   ggplot(aes(x = residential_percent_change_from_baseline, y = max_cases_per_million, color = continent)) +
+   geom_point(aes(size = max_deaths),alpha = 0.25) +
+   geom_text(aes(label = location, color = continent)) +
+   scale_size(range = c(.1,20), name = 'Current total deaths', labels = scales::comma) +
+   scale_color_manual(values = colors_continent, name = '') +
+   scale_y_continuous(labels = scales::comma) +
+   theme_minimal() +
+   theme() +
+   theme(panel.grid = element_blank(),
+         text = element_text(family = 'Arial', color = '#000f1c'),
+         plot.title = element_text(hjust = 0.5, face = 'bold'),
+         plot.subtitle = element_text(hjust = 0.5, face = 'bold'),
+         plot.caption = element_text(hjust = 0),
+         NULL) +
+   ylab('Current total cases per million habitants\n') + xlab('\n Average decrease in mobility') +
+   labs(title = 'Relation between increment of in-house activities after the 100th detected case,\nand total cases per million habitants and total deaths.\n',
+        caption = '*Only countries with total cases per million habitants between 1000 and 10,000, and wit a population higher than 1 million people are shown.\n\nData source: Our World in Data & Google Mobility Reports')
+
+```
+
+<br>
+
+## Mobility (by type) vs. Virus' Spread
+
+[Text]
+
+<br>
+
+```{r mob_v_covid3, fig.height=15, fig.width=12, fig.align='center'}
+
+covid1 %>% 
+   group_by(continent,.add = TRUE) %>% 
+   select(continent:new_deaths_per_million, max_cases:max_cases_per_million, population) %>% 
+   filter(total_cases >= 100 & population > 10000000) %>% 
+   filter(date == min(date) & max_cases_per_million < 10000 & max_cases_per_million > 1000) %>% 
+   left_join(select(filter(mobility_raw_data,is.na(sub_region_1)),
+                    country_region,date,8:13), 
+             by = c('location' = 'country_region', 'date' = 'date')) %>% 
+   filter(across(ends_with('baseline'),~!is.na(.))) %>%
+   gather(mob_type,mob_idx,retail_and_recreation_percent_change_from_baseline:residential_percent_change_from_baseline) %>% 
+   ggplot(aes(x = mob_idx, y = max_cases_per_million, color = continent)) +
+   geom_text(aes(label = location, color = continent)) +
+   facet_wrap(~factor(mob_type,
+                      levels = c('retail_and_recreation_percent_change_from_baseline',
+                                 'grocery_and_pharmacy_percent_change_from_baseline',
+                                 'parks_percent_change_from_baseline',
+                                 'transit_stations_percent_change_from_baseline',
+                                 'workplaces_percent_change_from_baseline',
+                                 'residential_percent_change_from_baseline'),
+                      labels = c('Retail and Recreation',
+                                 'Grocery and Pharmacy',
+                                 'Parks',
+                                 'Transit Stations',
+                                 'Work Places',
+                                 'Residential Activities')),
+              scales = 'free_x',
+              nrow = 3,ncol = 2) +
+   scale_color_manual(values = colors_continent, name = '') +
+   scale_y_continuous(labels = scales::comma) +
+   theme_minimal() +
+   theme() +
+   theme(panel.grid = element_blank(),
+         panel.background = element_rect(fill = '#fafafa', color = 'white'),
+         strip.background = element_rect(fill = '#fafafa', color = 'white'),
+         strip.text = element_text(face = 'bold'),
+         text = element_text(family = 'Arial', color = '#000f1c'),
+         plot.title = element_text(hjust = 0.5, face = 'bold'),
+         plot.subtitle = element_text(hjust = 0.5, face = 'bold'),
+         plot.caption = element_text(hjust = 0),
+         NULL) +
+   ylab('Current total cases per million habitants\n') + xlab('\n Average decrease in mobility') +
+   labs(title = 'Relation between increment of in-house activities after the 100th detected case,\nand total cases per million habitants and total deaths.\n',
+        caption = '*Only countries with total cases per million habitants between 1000 and 10,000, and wit a population higher than 1 million people are shown.\n\nData source: Our World in Data & Google Mobility Reports.')
+
+```
+
+<br>
