@@ -147,7 +147,7 @@ covid1 %>%
 ```{r new_cases_by_country_p, fig.height=9}
 
 p <- covid1 %>% 
-   filter( (max(total_cases_per_million,na.rm = TRUE) > 1000 &
+   filter( (max_cases_per_million > 1000 &
                max_cases > 40000 &
                population > 5000000 &
                total_cases >= 100) |
