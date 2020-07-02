@@ -4,6 +4,7 @@ author: <center>Alejandro Álvarez</center>
 date: <center>`r Sys.setlocale('LC_TIME','English'); format(Sys.time(), '%B %d, %Y')`</center>
 output:
    html_document:
+      dev: 'svg'
       toc: true
       toc_depth: 3
       toc_float:
@@ -187,7 +188,7 @@ p
 
 [Text]
 
-```{r total_deaths_by_country_p, fig.height=6}
+```{r total_deaths_by_country_p}
 
 p <- covid1 %>% 
    group_by(continent,.add = TRUE) %>% 
@@ -229,7 +230,7 @@ ggplotly(p,tooltip = c('text','y'))
 
 [Text]
 
-```{r mob_v_covid1, fig.height=6}
+```{r mob_v_covid1, fig.height=7}
 
 covid1 %>% 
    group_by(continent,.add = TRUE) %>% 
@@ -272,7 +273,7 @@ covid1 %>%
 
 [Text]
 
-```{r mob_v_covid2, fig.height=6}
+```{r mob_v_covid2, fig.height=7}
 
 covid1 %>% 
    group_by(continent,.add = TRUE) %>% 
