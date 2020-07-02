@@ -5,7 +5,7 @@ body {
   text-align: justify;
   font-size: 14px;
   line-height: 1.6;
-  color: #053347;
+  color: #002126;
   width: 110%;
   position: absolute;
   top: 0;
@@ -44,28 +44,39 @@ h3 {
   position: fixed;
   width: 12cm;
   border: none;
+  background: url('reuleaux_heptagon.svg');
+  padding-top: 220px !important;
+  padding-right: 70px !important;
+  background-repeat: no-repeat;
+  background-size: contain;
 }
 .tocify {
   border: none;
-  color: #053347;
+  color: #117c8d;
   border-radius: 0px;
 }
 .list-group-item.active {
-  color: #053347;
+  color: #117c8d;
   border-left: solid;
   border-right: 0pt;
-  border-color: #053347;
+  border-color: #117c8d;
   background-color: white;
 }
 .list-group-item:hover {
-  color: #053347;
-  background-color: white;
+  color: white;
+  background-color: #117c8d;
   border-left: solid;
   border-right: 0pt;
-  border-color: #053347;
+  border-color: #117c8d;
 }
 .tocify-extend-page {
   display: none;
+}
+.list-group-item.active:focus, .list-group-item.active:hover {
+  z-index: 2;
+  color: #fff;
+  background-color: #117c8d;
+  border-color: #117c8d;
 }
 
 /* Buttons for tabset pills */
@@ -74,27 +85,27 @@ h3 {
   border-width: 0 0px 0px 0px;
   font-weight: normal;
   text-transform: full-size-kana;
-  color: #053347a2;
+  color: #117c8da6;
 }
 .btn-default {
-  color: #053347a2;
-  background-color: #0089be17;
+  color: #117C8Da6;
+  background-color: #117c8d1e;
   border-color: #ffffff;
 }
 
 .nav-pills > li.active > a, .nav-pills > li.active > a:hover, .nav-pills > li.active > a:focus {
-  background-color: #053347a2;
+  background-color: #117C8Da6;
   font-size: 14px;
 }
 
 /* ---------- Links ----------------- */
 
 a {
-  color: #0091cf;
+  color: #117C8D;
 }
 a:hover {
-  color: #0091cf;
-  color: #0091cf6e;
+  color: #117C8D;
+  color: #117c8d52;
 }
 
 /* GitHub Corner (By T. Holman.) */

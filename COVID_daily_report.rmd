@@ -95,12 +95,12 @@ covid1 %>%
    theme(panel.grid = element_blank(),
          panel.background = element_rect(fill = '#fafafa', color = 'white'),
          strip.background = element_rect(fill = '#fafafa', color = 'white'),
-         strip.text = element_text(family = 'Century Gothic', color = '#053347'),
+         strip.text = element_text(family = 'Century Gothic', color = '#002126'),
          legend.position = 'bottom',
          legend.title = element_blank(),
          axis.title.x = element_blank(),
-         axis.text = element_text(family = 'Century Gothic', color = '#053347'),
-         text = element_text(family = 'Century Gothic', color = '#053347'),
+         axis.text = element_text(family = 'Century Gothic', color = '#002126'),
+         text = element_text(family = 'Century Gothic', color = '#002126'),
          plot.title = element_text(hjust = 0.5, face = 'bold'),
          plot.caption = element_text(hjust = 0),
          NULL) +
@@ -133,7 +133,7 @@ covid1 %>%
                                 columnDefs = list(list(className = 'dt-center', targets = 0:5)))) %>% 
    DT::formatRound(table = ., columns = c('Total Deaths per Million'),digits = 2) %>% 
    DT::formatCurrency(table = ., columns = c('Total Cases', 'Total Cases per Million', 'Total Deaths'),currency = '', digits = 0) %>%
-   DT::formatStyle(0:5,color = '#053347')
+   DT::formatStyle(0:5,color = '#002126')
 
 ```
 
@@ -165,7 +165,7 @@ p <- covid1 %>%
          legend.position = 'bottom',
          legend.title = element_blank(),
          axis.title.x = element_blank(),
-         text = element_text(family = 'Century Gothic', color = '#053347'),
+         text = element_text(family = 'Century Gothic', color = '#002126'),
          plot.title = element_text(hjust = 0.5, face = 'bold'),
          plot.subtitle = element_text(hjust = 0.5, face = 'bold'),
          plot.caption = element_text(hjust = 0),
@@ -203,7 +203,7 @@ p <- covid1 %>%
          legend.title = element_blank(),
          axis.title.x = element_blank(),
          axis.text.x = element_text(angle = 90,vjust = 0),
-         text = element_text(family = 'Century Gothic', color = '#053347'),
+         text = element_text(family = 'Century Gothic', color = '#002126'),
          plot.title = element_text(hjust = 0.5, face = 'bold'),
          plot.subtitle = element_text(hjust = 0.5, face = 'bold'),
          plot.caption = element_text(hjust = 0),
@@ -255,7 +255,7 @@ covid1 %>%
    theme_minimal() +
    theme() +
    theme(panel.grid = element_blank(),
-         text = element_text(family = 'Century Gothic', color = '#053347'),
+         text = element_text(family = 'Century Gothic', color = '#002126'),
          plot.title = element_text(hjust = 0.5, face = 'bold'),
          plot.subtitle = element_text(hjust = 0.5, face = 'bold'),
          plot.caption = element_text(hjust = 0),
@@ -292,7 +292,7 @@ covid1 %>%
    theme_minimal() +
    theme() +
    theme(panel.grid = element_blank(),
-         text = element_text(family = 'Century Gothic', color = '#053347'),
+         text = element_text(family = 'Century Gothic', color = '#002126'),
          plot.title = element_text(hjust = 0.5, face = 'bold'),
          plot.subtitle = element_text(hjust = 0.5, face = 'bold'),
          plot.caption = element_text(hjust = 0),
@@ -339,7 +339,7 @@ for (i in names(vars)) {
       theme_minimal() +
       theme() +
       theme(panel.grid = element_blank(),
-            text = element_text(family = 'Century Gothic', color = '#053347'),
+            text = element_text(family = 'Century Gothic', color = '#002126'),
             plot.title = element_text(hjust = 0.5, face = 'bold'),
             plot.subtitle = element_text(hjust = 0.5, face = 'bold'),
             plot.caption = element_text(hjust = 0),
@@ -352,7 +352,7 @@ for (i in names(vars)) {
 
 ```
 
-```{r, results='asis', fig.height=6}
+```{r, results='asis'}
 
 for (plot in names(plots_lst)) {
    
@@ -369,6 +369,8 @@ for (plot in names(plots_lst)) {
 
 # Acknowledgements
 
-* GitHub Corner: [Tim Holman.](http://tholman.com)
+* GitHub Corner by [Tim Holman.](http://tholman.com)
 
-* Icons: [Font Awesome 4.7.0. Created by Font Awesome](https://fontawesome.com/v4.7.0/icons/)
+* Icons taken from [Font Awesome 4.7.0., created by Font Awesome](https://fontawesome.com/v4.7.0/icons/).
+
+* Reuleaux heptagon image was constructed using [this code](https://github.com/scipython/scipython-maths/blob/master/reuleaux/make_reuleaux_construction.py), written by [Christian Hill](https://github.com/scipython).
